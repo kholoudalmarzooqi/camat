@@ -22,7 +22,7 @@ function varargout = camat(varargin)
 
 % Edit the above text to modify the response to help camat
 
-% Last Modified by GUIDE v2.5 05-Jan-2017 11:04:00
+% Last Modified by GUIDE v2.5 14-Jun-2017 14:03:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -418,6 +418,24 @@ handles.gr=gr;
 handles.gc=gc;
 guidata(hObject,handles);
 
+
+% --- Executes on button press in pushbutton20.
+function pushbutton20_Callback(hObject, eventdata, handles)
+[gr,gc]=find(handles.imstd>0);
+[pc,pr]=ginput(1);                                                                                                                                 
+pc=round(pc);                                                                                                                                       
+pr=round(pr);
+
+% update text boxes
+set(handles.edit17,'String',num2str(pc));
+set(handles.edit18,'String',num2str(pr));
+
+% output needed vars  
+handles.gr=gr;
+handles.gc=gc;
+guidata(hObject,handles);
+
+
 %% --- Executes on button press in Region Selector OK button
 function pushbutton3_Callback(hObject, eventdata, handles)
 data=handles.data;
@@ -429,13 +447,15 @@ pc=str2double(handles.edit8.String);
 dt=handles.dt;
 maxrad=str2double(handles.txt_maxrad.String);
 
-mode_selection = get(handles.popupmenu2, 'Value');
+mode_selection = 1;
 
 [avesig,time,radi]=region(data,gr,gc,pr,pc,dt,maxrad,mode_selection);
 
+norm=(avesig-min(avesig))/(max(avesig)-min(avesig));
+
 axes(handles.axes1) 
 hold off
-plot(time,avesig);
+plot(time,norm);
 xlabel('Time (s)')
 ylabel('Fluorescence (AU)');
 xlim([0 max(time)])
@@ -859,14 +879,18 @@ thres=handles.edit1.Value;
 mpd=round(handles.edit2.Value);
 
 % What files do you want to load?
-%files=1:nFiles;
-files=[1,6:24]; % specify specific file vector
+files=1:42;
+%files=[32:40]; % specify specific file vector
 
 
 
-for filenum=files;     
+for filenum=files;   
     try
-        [~, data, fps, ~, ~, ~]=sifopen([pname, root,'_',num2str(filenum),'.sif']);
+        [ret, data, fps, ~, ~, ~]=sifopen([pname, root,'_',num2str(filenum),'.sif']);
+        if ret==0
+            break
+            disp('problem with locating file')
+        end
         dt=1/fps;
 
         [avesig,time,radi]=region(data,gr,gc,pr,pc,dt, maxrad, mode_selection);
@@ -881,19 +905,18 @@ for filenum=files;
         hold on
         [num_peaks, locsa, upstroke_locs, t0_locs, depV, minimum, maximum, amp]=peak_detect(avesig, thres, mpd);
         [~,~,mean_results]=process(locsa, upstroke_locs,t0_locs,depV,avesig,time,fps,minimum,maximum);
-        %pause
-
+        pause(0.5)
         batch_results(filenum,:)=mean_results;
         set(handles.text15,'String',num2str(filenum));
-    catch me
-        mean_results=[];
-        batch_results(filenum,:)=mean_results;
-        set(handles.text15,'String',num2str(filenum));
+    
+    catch   
+        batch_results(filenum,:)=zeros(size(mean_results));        
+        set(handles.text15,'String',num2str(filenum));          
     end
     
 end
 
-Btab=array2table(batch_results,'VariableNames',{'Vmax','UpTime90','TauFall','CaD30','CaD80','CaD30d80','D_F0','F1_F0','PeakTimeDiff','FD_F0','LD_F0'});
+Btab=array2table(batch_results,'VariableNames',{'Vmax','UpTime90','TauFall','CaD30','APD80','CaD30d80','D_F0','F1_F0','CL','FD_F0','LD_F0'});
 handles.Btab=Btab; % batch results table with mean from each file
 guidata(hObject,handles);
 
@@ -962,3 +985,112 @@ function pushbutton19_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton19 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit17_Callback(hObject, eventdata, handles)
+% hObject    handle to edit17 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit17 as text
+%        str2double(get(hObject,'String')) returns contents of edit17 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit17_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit17 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit18_Callback(hObject, eventdata, handles)
+% hObject    handle to edit18 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit18 as text
+%        str2double(get(hObject,'String')) returns contents of edit18 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit18_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit18 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit19_Callback(hObject, eventdata, handles)
+% hObject    handle to edit19 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit19 as text
+%        str2double(get(hObject,'String')) returns contents of edit19 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit19_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit19 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton21.
+% Pick your Voltage Region
+function pushbutton21_Callback(hObject, eventdata, handles)
+data=handles.data;
+imstd=handles.imstd;
+gr=handles.gr;
+gc=handles.gc;
+pr=str2double(handles.edit18.String);
+pc=str2double(handles.edit17.String);
+dt=handles.dt;
+maxrad=str2double(handles.edit19.String);
+
+mode_selection = 2;
+
+[avesig,time,radi]=region(data,gr,gc,pr,pc,dt,maxrad,mode_selection);
+
+avesig=detrend(avesig);
+norm=(avesig-min(avesig))/(max(avesig)-min(avesig));
+
+
+axes(handles.axes1) 
+hold on
+plot(time,norm,'r');
+xlabel('Time (s)')
+ylabel('Fluorescence (AU)');
+xlim([0 max(time)])
+set(handles.radiobutton10,'Value',1);
+
+axes(handles.axes3)
+imagesc(imstd);
+hold on
+plot(gc(radi), gr(radi), 'k.');
+axis image
+
+% Exporting variables
+handles.time=time;
+handles.avesig=avesig;
+guidata(hObject,handles);
